@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CYBER SCOREBOARD v7.7</title>
+    <title>CYBER SCOREBOARD v7.9</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -17,9 +17,19 @@
             --neon-red: #ff073a;
             --neon-gold: #ffd700;
             --neon-orange: #ff8c00;
-            --grid-color: rgba(0, 243, 255, 0.1);
+            --grid-color: rgba(0, 243, 255, 0.08);
             --safe-top: env(safe-area-inset-top, 20px);
             --safe-bottom: env(safe-area-inset-bottom, 20px);
+
+            /* Dynamic Color Theme Variables (Default: Tactical) */
+            --score-pos: var(--neon-blue);
+            --score-neg: #d68a00; /* Muted Gold/Orange for less stress */
+        }
+
+        /* High Contrast Theme Override */
+        body.theme-contrast {
+            --score-pos: var(--neon-green);
+            --score-neg: var(--neon-red);
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation; }
@@ -28,13 +38,30 @@
             margin: 0; padding: 0;
             font-family: 'Share Tech Mono', monospace;
             background-color: var(--bg-dark); color: var(--neon-blue);
+            /* Aesthetic: Moving Grid */
             background-image: 
                 linear-gradient(var(--grid-color) 1px, transparent 1px),
                 linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-            background-size: 20px 20px;
+            background-size: 40px 40px;
+            animation: gridPan 60s linear infinite;
             padding-bottom: calc(80px + var(--safe-bottom));
             padding-top: 0;
             overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes gridPan {
+            0% { background-position: 0 0; }
+            100% { background-position: 40px 40px; }
+        }
+
+        /* Aesthetic: Scanline Overlay */
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none; z-index: 999;
+            opacity: 0.6;
         }
 
         /* --- Header --- */
@@ -56,7 +83,6 @@
             font-family: 'Share Tech Mono'; font-size: 0.8rem; cursor: pointer;
             min-width: 70px; text-align: center; position: relative;
         }
-        .header-action-btn::after { content: ''; position: absolute; top: -10px; bottom: -10px; left: -10px; right: -10px; }
         .header-action-btn:active { background: var(--neon-blue); color: #000; }
         
         .icon-only-btn { 
@@ -65,6 +91,7 @@
             border-radius: 4px; display: flex; align-items: center; justify-content: center; 
             font-size: 1rem; cursor: pointer; 
         }
+        .icon-only-btn:active { background: var(--neon-blue); color: #000; }
 
         /* --- Action Bar --- */
         .action-bar { padding: 10px 10px; display: flex; gap: 10px; }
@@ -147,16 +174,25 @@
             display: flex; align-items: center; justify-content: center;
             width: 80px; height: 100%;
             cursor: pointer;
-            overflow: visible; /* Allow animation to fly out */
+            overflow: visible; 
         }
         .p-score { 
             font-family: 'Orbitron'; font-size: 2rem; font-weight: 900; color: #fff; 
             text-align: center; letter-spacing: -1px;
             font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; 
             text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+            transition: color 0.2s;
         }
-        .p-score.positive { color: var(--neon-green); }
-        .p-score.negative { color: var(--neon-red); }
+        .p-score.score-pulse { animation: scorePulseAnim 0.3s ease-out forwards; }
+        @keyframes scorePulseAnim {
+            0% { transform: scale(1); filter: brightness(1); }
+            30% { transform: scale(1.35); filter: brightness(1.5); color: #fff; }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+
+        /* Theme-based colors */
+        .p-score.positive { color: var(--score-pos); }
+        .p-score.negative { color: var(--score-neg); }
         .p-score.mvp { color: var(--neon-gold); text-shadow: 0 0 15px var(--neon-gold); }
 
         /* Buttons */
@@ -170,10 +206,12 @@
             color: var(--neon-blue); font-size: 1rem; font-weight: bold;
             display: flex; align-items: center; justify-content: center;
             height: 48px; border-radius: 4px; cursor: pointer;
+            transition: all 0.1s;
         }
         .team-B .win-btn { border-color: var(--neon-pink); color: var(--neon-pink); background: rgba(255, 0, 255, 0.1); }
-        .win-btn:active { background: var(--neon-blue); color: #000; transform: scale(0.98); }
+        .win-btn:active { background: var(--neon-blue); color: #000; transform: scale(0.95); }
         .team-B .win-btn:active { background: var(--neon-pink); color: #000; }
+        
         .foul-btn { 
             flex: 1; 
             font-size: 0.75rem; color: #888; border: 1px solid #444; 
@@ -210,24 +248,26 @@
         .extra-btn:active { background: #444; }
         .extra-val { font-family: 'Orbitron'; color: var(--neon-gold); font-size: 1.2rem; flex: 1; text-align: center; font-weight: bold; }
 
-        /* --- Animations (v7.7 Fixed Offset) --- */
+        /* --- Animations v7.9 (Left Side & Logic) --- */
         .float-anim {
             position: absolute; 
-            /* Push completely outside the score box to the right */
-            left: 100%; 
+            right: 100%; /* Moved to LEFT side of the score container */
             top: 50%; 
-            margin-left: 10px; /* Gap between score and animation */
+            margin-right: 15px; 
             transform: translateY(-50%);
-            font-size: 1.8rem; font-family: 'Orbitron'; font-weight: 900; pointer-events: none;
-            animation: popHoldFade 2s ease-out forwards;
-            z-index: 100; text-shadow: 2px 2px 0px #000;
+            font-size: 2rem; font-family: 'Orbitron'; font-weight: 900; pointer-events: none;
+            animation: critPopAnim 1.5s ease-out forwards; 
+            z-index: 100; 
             white-space: nowrap;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
         }
-        @keyframes popHoldFade {
-            0% { opacity: 0; transform: translate(0, -50%) scale(0.5); }
-            10% { opacity: 1; transform: translate(0, -50%) scale(1.2); } /* Pop in */
-            60% { opacity: 1; transform: translate(0, -50%) scale(1.2); } /* HOLD */
-            100% { opacity: 0; transform: translate(0, -150%) scale(1); } /* Fade out up */
+
+        @keyframes critPopAnim {
+            0% { opacity: 0; transform: translate(0, -50%) scale(0.2); }
+            15% { opacity: 1; transform: translate(0, -50%) scale(1.5); }
+            30% { transform: translate(0, -50%) scale(1.0); }
+            70% { opacity: 1; transform: translate(0, -50%) scale(1.0); }
+            100% { opacity: 0; transform: translate(0, -150%) scale(1.0); }
         }
 
         /* --- Modals --- */
@@ -238,24 +278,17 @@
             padding-top: var(--safe-top); 
             backdrop-filter: blur(8px);
         }
-        #statsModal .modal-header {
-            flex-shrink: 0; padding: 15px; border-bottom: 1px solid var(--neon-blue);
+        .modal-head-bar {
+            flex-shrink: 0; padding: 15px; border-bottom: 1px solid #333;
             display: flex; justify-content: space-between; align-items: center;
             background: rgba(0,0,0,0.5);
         }
-        #statsModal .modal-title { font-family: 'Orbitron'; font-size: 1.2rem; color: #fff; }
-        #statsModal .modal-content {
+        .modal-head-title { font-family: 'Orbitron'; font-size: 1.2rem; color: #fff; }
+        
+        #statsModal .modal-content, #settingsModal .modal-content {
             flex: 1; overflow-y: auto; padding: 15px; padding-bottom: calc(30px + var(--safe-bottom));
-            -webkit-overflow-scrolling: touch;
-        }
-        .mobile-close-btn {
-            display: block; width: 100%; padding: 15px;
-            background: #222; border: 1px solid #444; color: #fff;
-            margin-top: 30px; text-align: center; font-family: 'Orbitron';
-            border-radius: 4px;
         }
 
-        /* Confirm Modal */
         .confirm-panel { 
             width: 90%; max-width: 320px; 
             background: #0a0a0e; border: 2px solid #fff; 
@@ -270,11 +303,11 @@
         .c-foul .confirm-detail { color: var(--neon-red); }
         .confirm-btns { display: flex; gap: 10px; }
 
-        /* Edit Modal */
         .edit-panel { width: 80%; margin: auto; background: #1a1a20; border: 1px solid var(--neon-blue); padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         .edit-input { background: #000; color: #fff; font-size: 2rem; text-align: center; border: 1px solid #444; padding: 5px; font-family: 'Orbitron'; width: 100%; }
+        .settings-row { margin-bottom: 20px; }
+        .settings-label { color: #888; margin-bottom: 5px; font-size: 0.9rem; }
 
-        /* Tables & Heatmap & Log */
         .cyber-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; color: #ccc; }
         .cyber-table th { text-align: left; border-bottom: 1px solid #444; padding: 8px 6px; color: var(--neon-blue); font-size: 0.75rem; }
         .cyber-table td { border-bottom: 1px solid #222; padding: 10px 6px; }
@@ -300,7 +333,6 @@
         .heat-2 { background: rgba(0, 243, 255, 0.3); color: #fff; }
         .heat-3 { background: rgba(0, 243, 255, 0.6); color: #fff; font-weight: bold; }
 
-        /* Log Styles */
         .log-container { 
             background: #000; border: 1px solid #333; height: 200px; overflow-y: auto; 
             padding: 5px; margin-top: 10px; font-family: monospace; font-size: 0.75rem;
@@ -314,6 +346,8 @@
 </head>
 <body>
 
+    <!-- Visual FX -->
+    <div class="scanlines"></div>
     <div id="loaderOverlay">
         <div style="font-family: 'Orbitron'; font-size: 1.5rem; color: var(--neon-green);">RE-GROUPING...</div>
     </div>
@@ -330,7 +364,7 @@
         </div>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Edit Score Modal -->
     <div id="editModal" class="modal-overlay">
         <div class="edit-panel">
             <div style="text-align:center; color:var(--neon-blue); font-family:'Orbitron'">OVERRIDE SCORE</div>
@@ -342,13 +376,41 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal-head-bar">
+            <div class="modal-head-title"><i class="fas fa-cogs"></i> SETTINGS</div>
+            <div onclick="closeSettings()" style="padding:10px; cursor:pointer; color:var(--neon-red);"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="modal-content">
+            <div class="settings-row">
+                <div class="settings-label">色彩风格 (Theme)</div>
+                <select id="settingTheme" class="edit-input" style="font-size:1rem; text-align:left; padding:10px;">
+                    <option value="tactical">战术冷静 (Tactical Blue)</option>
+                    <option value="contrast">高对比度 (High Contrast)</option>
+                </select>
+                <div style="font-size:0.75rem; color:#666; margin-top:5px;">"战术冷静"减少了红色负面反馈，适合长期比赛。</div>
+            </div>
+            <div class="settings-row">
+                <div class="settings-label">基础分 (Base Score)</div>
+                <input type="number" id="settingBaseInput" class="edit-input" value="10" style="color:var(--neon-green)">
+                <div style="font-size:0.75rem; color:#666; margin-top:5px;">
+                    接清(Run) = 2x, 炸清(Bomb) = 4x
+                </div>
+            </div>
+            <div class="settings-row">
+                <div class="settings-label">犯规扣分 (Foul Penalty)</div>
+                <input type="number" id="settingFoulInput" class="edit-input" value="2" style="color:var(--neon-red)">
+            </div>
+            <button class="cyber-btn" onclick="saveSettings()">保存配置 / SAVE</button>
+        </div>
+    </div>
+
     <!-- Stats Modal -->
     <div id="statsModal" class="modal-overlay">
-        <div class="modal-header">
-            <div class="modal-title"><i class="fas fa-database"></i> DATA CORE</div>
-            <div onclick="closeStats()" style="padding:10px; margin:-10px; cursor:pointer; color:var(--neon-red); font-size:1.2rem;">
-                <i class="fas fa-times"></i>
-            </div>
+        <div class="modal-head-bar">
+            <div class="modal-head-title"><i class="fas fa-database"></i> DATA CORE</div>
+            <div onclick="closeStats()" style="padding:10px; cursor:pointer; color:var(--neon-red);"><i class="fas fa-times"></i></div>
         </div>
         <div class="modal-content">
             <!-- Section 1: Rankings -->
@@ -359,7 +421,6 @@
                     <tbody id="statsBody"></tbody>
                 </table>
             </div>
-            
             <!-- Section 2: Heatmap -->
             <div style="margin-bottom: 25px;">
                 <div style="color:var(--neon-green); border-left:3px solid var(--neon-green); padding-left:8px; font-size:0.9rem; margin-bottom:10px;">SYNERGY HEATMAP</div>
@@ -367,22 +428,21 @@
                     <div id="heatmapContainer" class="heatmap-container"></div>
                 </div>
             </div>
-
             <!-- Section 3: Logs -->
             <div>
                 <div style="color:var(--neon-blue); border-left:3px solid var(--neon-blue); padding-left:8px; font-size:0.9rem; margin-bottom:10px;">SYSTEM LOGS</div>
-                <div id="logContainer" class="log-container">
-                    <!-- Logs go here -->
-                </div>
+                <div id="logContainer" class="log-container"></div>
             </div>
-
-            <button class="mobile-close-btn" onclick="closeStats()">关闭页面 / CLOSE</button>
+            <button class="mobile-close-btn" onclick="closeStats()" style="display:block; width:100%; padding:15px; background:#222; border:1px solid #444; color:#fff; margin-top:30px; font-family:'Orbitron'">关闭页面 / CLOSE</button>
         </div>
     </div>
 
     <header>
-        <div class="logo">CYBER v7.7</div>
+        <div class="logo">CYBER v7.9</div>
         <div class="header-btns">
+            <button class="icon-only-btn" onclick="SFX.play('click'); openSettings()">
+                <i class="fas fa-cog"></i>
+            </button>
             <button class="header-action-btn" onclick="resetSeason()">RESET</button>
             <button class="icon-only-btn" onclick="SFX.play('click'); openStats()">
                 <i class="fas fa-chart-pie"></i>
@@ -402,9 +462,9 @@
     <div class="footer-controls">
         <div class="control-unit">
             <div class="tier-group">
-                <button class="tier-btn active" id="tier-base" onclick="setTier('base')">基础<br><span>10</span></button>
-                <button class="tier-btn" id="tier-run" onclick="setTier('run')">接清<br><span>20</span></button>
-                <button class="tier-btn" id="tier-bomb" onclick="setTier('bomb')">炸清<br><span>40</span></button>
+                <button class="tier-btn active" id="tier-base" onclick="setTier('base')">基础<br><span id="lbl-base">10</span></button>
+                <button class="tier-btn" id="tier-run" onclick="setTier('run')">接清<br><span id="lbl-run">20</span></button>
+                <button class="tier-btn" id="tier-bomb" onclick="setTier('bomb')">炸清<br><span id="lbl-bomb">40</span></button>
             </div>
         </div>
         <div class="control-unit" style="width:120px;">
@@ -446,13 +506,20 @@
         };
 
         // --- 2. Data State ---
-        const TIER_VALUES = { base: 10, run: 20, bomb: 40 };
-        let config = { currentTier: 'base', extraScore: 1, foulScore: 2 };
+        // v7.9: Added colorMode to config
+        let config = { currentTier: 'base', extraScore: 1, baseScore: 10, foulScore: 2, colorMode: 'tactical' };
         let rivalIds = [];
         let teamHistory = {}; 
         let players = [];
         let actionLogs = []; 
         let pendingAction = null; 
+
+        function getTierValue(tier) {
+            const base = config.baseScore || 10;
+            if (tier === 'run') return base * 2;
+            if (tier === 'bomb') return base * 4;
+            return base;
+        }
 
         // --- 3. Initialization ---
         function initDefaultPlayers() {
@@ -482,10 +549,13 @@
         const extraValEl = document.getElementById('extraVal');
 
         function render(animationOnly = false) {
+            // Apply Color Theme
+            document.body.classList.toggle('theme-contrast', config.colorMode === 'contrast');
+
             if(!animationOnly) listEl.innerHTML = '';
             
             const maxScore = Math.max(...players.map(p => p.score), 0);
-            const currentWinVal = TIER_VALUES[config.currentTier] + config.extraScore;
+            const currentWinVal = getTierValue(config.currentTier) + config.extraScore;
 
             players.forEach(p => {
                 let teamClass = `team-${p.team}`;
@@ -504,7 +574,7 @@
                             <div class="win-btn" onclick="requestConfirm('win', '${p.team}')">胜 +${currentWinVal}</div>
                             <div class="foul-btn" onclick="requestConfirm('foul', ${p.id})">
                                 <span>犯规</span>
-                                <span class="foul-count">(${p.fouls})</span>
+                                <span id="foul-count-${p.id}" class="foul-count">(${p.fouls})</span>
                             </div>
                         `;
                     } else {
@@ -539,20 +609,17 @@
                     `;
                     listEl.insertAdjacentHTML('beforeend', html);
                 } else {
-                    // Animation Only Mode
                     const scoreEl = document.getElementById(`score-text-${p.id}`);
-                    if(scoreEl) scoreEl.className = scoreClass; 
-                    // Also update rest badge instantly if exists
+                    if(scoreEl) {
+                         if(!scoreEl.classList.contains('score-pulse')) {
+                            scoreEl.className = scoreClass; 
+                         } else {
+                             scoreEl.className = scoreClass + ' score-pulse';
+                         }
+                    }
                     if(p.restCount > 0) {
                         let badge = document.getElementById(`rest-badge-${p.id}`);
-                        if(!badge) {
-                            // If badge didn't exist but now does, we might need a full render or manual insert, 
-                            // but usually animationOnly is called during score change. 
-                            // For v7.7 rest fix, we force render() on win anyway after delay, 
-                            // but to be safe we rely on the full render logic for structural changes.
-                        } else {
-                            badge.textContent = p.restCount;
-                        }
+                        if(badge) badge.textContent = p.restCount;
                     }
                 }
             });
@@ -563,18 +630,34 @@
             const scoreEl = document.getElementById(`score-text-${p.id}`);
             if(!scoreEl) return;
 
+            // 1. Float Crit Animation (Now on the LEFT)
             const floatEl = document.createElement('div');
             floatEl.className = 'float-anim';
             const displayDelta = Number.isInteger(delta) ? delta : delta.toFixed(1);
             floatEl.textContent = delta > 0 ? `+${displayDelta}` : displayDelta;
-            floatEl.style.color = delta > 0 ? 'var(--neon-green)' : 'var(--neon-red)';
+            
+            // Determine glow color based on Theme
+            const isContrast = config.colorMode === 'contrast';
+            let glowColor;
+            if(delta > 0) glowColor = isContrast ? 'var(--neon-green)' : 'var(--neon-blue)';
+            else glowColor = isContrast ? 'var(--neon-red)' : '#ffaa00';
+
+            floatEl.style.color = glowColor;
+            floatEl.style.textShadow = `0 0 15px ${glowColor}`;
             scoreEl.parentNode.appendChild(floatEl);
             
-            setTimeout(() => floatEl.remove(), 2100);
+            setTimeout(() => floatEl.remove(), 2000);
 
+            // 2. Main Score Pulse
+            scoreEl.classList.remove('score-pulse');
+            void scoreEl.offsetWidth; 
+            scoreEl.classList.add('score-pulse');
+            setTimeout(() => scoreEl.classList.remove('score-pulse'), 350);
+
+            // 3. Rolling Numbers
             const startVal = parseInt(scoreEl.textContent, 10) || 0;
             const endVal = newVal;
-            const duration = 1200;
+            const duration = 1000;
             let startTime = null;
 
             function step(timestamp) {
@@ -598,10 +681,9 @@
             if(winningTeam === 'Rest') return;
             SFX.play('win');
             
-            const val = TIER_VALUES[config.currentTier] + config.extraScore;
+            const val = getTierValue(config.currentTier) + config.extraScore;
             const losingTeam = winningTeam === 'A' ? 'B' : 'A';
 
-            // Log names
             const winnerNames = players.filter(p => p.team === winningTeam).map(p => p.name).join(', ');
             logAction(`${winnerNames} 胜 (+${val})`);
 
@@ -616,21 +698,15 @@
                     p.score -= val;
                     animateScoreChange(p, p.score, -val);
                 } else {
-                    // v7.7: Strict Rest Logic - Everyone not in A or B gets +1
                     p.restCount = (p.restCount || 0) + 1;
                 }
             });
             
             recordPairs(players.filter(p => p.team === 'A'));
             recordPairs(players.filter(p => p.team === 'B'));
-            
             players.forEach(p => { if(Math.abs(p.score % 1) < 0.01) p.score = Math.round(p.score); });
-            saveData();
             
-            // Delay full re-render to allow animation to start, but user needs to see Rest updates soon.
-            // Render(true) updates scores, but not badges structurally. 
-            // To ensure badges appear, we do a full render slightly later, OR force it now.
-            // For smooth animation, we wait.
+            saveData();
             setTimeout(() => render(), 1300); 
         }
 
@@ -639,10 +715,13 @@
             if(!p || p.team === 'Rest') return;
             SFX.play('alert');
             
+            p.fouls = (p.fouls || 0) + 1;
+            const foulSpan = document.getElementById(`foul-count-${p.id}`);
+            if(foulSpan) foulSpan.textContent = `(${p.fouls})`;
+
             const penalty = config.foulScore;
             logAction(`${p.name} 犯规 (-${penalty})`);
 
-            p.fouls = (p.fouls || 0) + 1;
             const opponentTeam = p.team === 'A' ? 'B' : 'A';
             const opponents = players.filter(op => op.team === opponentTeam);
 
@@ -658,7 +737,6 @@
             }
              players.forEach(p => { if(Math.abs(p.score % 1) < 0.01) p.score = Math.round(p.score); });
              saveData();
-             setTimeout(() => render(true), 100);
         }
 
         function triggerRandomize() {
@@ -676,20 +754,15 @@
         function executeRandomize() {
             let activePool = players.filter(p => !p.isResting);
             if(activePool.length < 2) return; 
-            
-            // Shuffle
             for (let i = activePool.length - 1; i > 0; i--) { 
                 const j = Math.floor(Math.random() * (i + 1)); 
                 [activePool[i], activePool[j]] = [activePool[j], activePool[i]]; 
             }
-
             players.forEach(p => { if(!p.isResting) p.team = 'Rest'; });
-
             if(activePool.length === 2) {
                 const p1 = players.find(x => x.id === activePool[0].id);
                 const p2 = players.find(x => x.id === activePool[1].id);
-                p1.team = 'A';
-                p2.team = 'B';
+                p1.team = 'A'; p2.team = 'B';
             } else {
                 if (rivalIds.length === 2) {
                     const p1 = activePool.find(p=>p.id===rivalIds[0]);
@@ -698,27 +771,23 @@
                          const idx1 = activePool.indexOf(p1); 
                          const idx2 = activePool.indexOf(p2);
                          const getTeam = (idx) => idx < 2 ? 'A' : (idx < 4 ? 'B' : 'Rest');
-                         const t1 = getTeam(idx1);
-                         const t2 = getTeam(idx2);
+                         const t1 = getTeam(idx1); const t2 = getTeam(idx2);
                          if(t1 !== 'Rest' && t1 === t2) {
                              const targetIdx = t1 === 'A' ? 2 : 0;
                              if(activePool[targetIdx]) {
-                                 activePool[idx2] = activePool[targetIdx];
-                                 activePool[targetIdx] = p2;
+                                 activePool[idx2] = activePool[targetIdx]; activePool[targetIdx] = p2;
                              }
                          }
                     }
                 }
-                
                 activePool.forEach((p, i) => {
                     const originalP = players.find(x => x.id === p.id);
-                    if(i < 2) originalP.team = 'A'; 
-                    else if(i < 4) originalP.team = 'B';
+                    if(i < 2) originalP.team = 'A'; else if(i < 4) originalP.team = 'B';
                 });
             }
         }
 
-        // --- Actions ---
+        // --- Actions & Modals ---
         function requestConfirm(type, arg) {
             SFX.play('alert');
             pendingAction = { type, arg };
@@ -728,7 +797,7 @@
             const execBtn = document.getElementById('confirmExecBtn');
             modal.style.display = 'flex';
             if (type === 'win') {
-                const val = TIER_VALUES[config.currentTier] + config.extraScore;
+                const val = getTierValue(config.currentTier) + config.extraScore;
                 panel.className = 'confirm-panel c-win';
                 detail.textContent = `${arg}队 胜 +${val}`;
                 execBtn.className = 'cyber-btn';
@@ -758,53 +827,52 @@
             if(currentEditId && !isNaN(val)) { 
                 const p = players.find(p=>p.id===currentEditId);
                 logAction(`修正 ${p.name} 分数: ${p.score} -> ${val}`);
-                p.score = val; 
-                render(); saveData(); 
+                p.score = val; render(); saveData(); 
             } 
             closeEditModal(); 
+        }
+
+        // Settings Logic
+        function openSettings() {
+            document.getElementById('settingBaseInput').value = config.baseScore || 10;
+            document.getElementById('settingFoulInput').value = config.foulScore || 2;
+            document.getElementById('settingTheme').value = config.colorMode || 'tactical';
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+        function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+        function saveSettings() {
+            const b = parseInt(document.getElementById('settingBaseInput').value);
+            const f = parseFloat(document.getElementById('settingFoulInput').value);
+            const t = document.getElementById('settingTheme').value;
+            if(b > 0) config.baseScore = b;
+            if(f >= 0) config.foulScore = f;
+            config.colorMode = t;
+            saveData(); render(); 
+            closeSettings();
         }
         
         function updateFooterUI() {
             extraValEl.textContent = config.extraScore > 0 ? `+${config.extraScore}` : config.extraScore;
-            ['base', 'run', 'bomb'].forEach(t => { document.getElementById(`tier-${t}`).className = `tier-btn ${config.currentTier === t ? (t==='bomb'?'active-high':'active') : ''}`; });
+            ['base', 'run', 'bomb'].forEach(t => { 
+                const btn = document.getElementById(`tier-${t}`);
+                btn.className = `tier-btn ${config.currentTier === t ? (t==='bomb'?'active-high':'active') : ''}`; 
+            });
+            document.getElementById('lbl-base').textContent = getTierValue('base');
+            document.getElementById('lbl-run').textContent = getTierValue('run');
+            document.getElementById('lbl-bomb').textContent = getTierValue('bomb');
         }
         
-        // v7.7: Trigger full render to update button text immediately
-        function setTier(t) { 
-            SFX.play('click'); 
-            config.currentTier = t; 
-            saveData(); 
-            render(); 
-        }
-        function adjustExtra(v) { 
-            SFX.play('click'); 
-            config.extraScore += v; 
-            saveData(); 
-            render(); 
-        }
-        
-        function toggleRest(id) {
-            SFX.play('click');
-            const p = players.find(p=>p.id===id);
-            p.isResting = !p.isResting;
-            if(p.isResting) p.team = 'Rest';
-            render(); saveData();
-        }
-
+        function setTier(t) { SFX.play('click'); config.currentTier = t; saveData(); render(); }
+        function adjustExtra(v) { SFX.play('click'); config.extraScore += v; saveData(); render(); }
+        function toggleRest(id) { SFX.play('click'); const p = players.find(p=>p.id===id); p.isResting = !p.isResting; if(p.isResting) p.team = 'Rest'; render(); saveData(); }
         function toggleRival(id) { SFX.play('click'); if(rivalIds.includes(id)) rivalIds=rivalIds.filter(i=>i!==id); else {if(rivalIds.length>=2)rivalIds.shift(); rivalIds.push(id);} render(); saveData(); }
         function updateName(id, val) { players.find(p=>p.id===id).name = val; saveData(); }
-        function addPlayer() { 
-            players.push({ id: Date.now(), name: `P${players.length+1}`, team: "Rest", score: 0, isResting: false, wins: 0, matches: 0, fouls: 0, restCount: 0 }); 
-            render(); saveData(); 
-        }
+        function addPlayer() { players.push({ id: Date.now(), name: `P${players.length+1}`, team: "Rest", score: 0, isResting: false, wins: 0, matches: 0, fouls: 0, restCount: 0 }); render(); saveData(); }
         function deletePlayer(id) { if(confirm("删除该玩家?")) { players = players.filter(p=>p.id!==id); rivalIds=rivalIds.filter(i=>i!==id); render(); saveData(); } }
         
         function resetSeason() { 
             if(confirm("确定重置赛季所有数据?")) { 
-                players.forEach(p => { 
-                    p.score=0; p.team='Rest'; p.wins=0; p.matches=0; 
-                    p.fouls=0; p.restCount=0;
-                }); 
+                players.forEach(p => { p.score=0; p.team='Rest'; p.wins=0; p.matches=0; p.fouls=0; p.restCount=0; }); 
                 teamHistory={}; actionLogs=[]; render(); saveData(); 
             } 
         }
@@ -820,18 +888,14 @@
         }
 
         function showHeatmapDetail(n1, n2, count) { if(count) alert(`${n1} & ${n2}\n累计组队: ${count} 次`); }
-
         function openStats() {
             document.getElementById('statsModal').style.display = 'flex';
             const tbody = document.getElementById('statsBody');
             tbody.innerHTML = '';
-            
             [...players].sort((a,b) => (b.matches?b.wins/b.matches:0) - (a.matches?a.wins/a.matches:0)).forEach(p => {
                 const rate = p.matches > 0 ? Math.round((p.wins / p.matches) * 100) : 0;
-                const winStr = `${p.wins}/${p.matches} <span style="color:#888; font-size:0.7em">(${rate}%)</span>`;
-                tbody.insertAdjacentHTML('beforeend', `<tr><td>${p.name.substring(0,6)}</td><td>${winStr}</td><td>${p.score}</td><td style="color:var(--neon-orange)">${p.restCount}</td></tr>`);
+                tbody.insertAdjacentHTML('beforeend', `<tr><td>${p.name.substring(0,6)}</td><td>${p.wins}/${p.matches} <span style="color:#888; font-size:0.7em">(${rate}%)</span></td><td>${p.score}</td><td style="color:var(--neon-orange)">${p.restCount}</td></tr>`);
             });
-            
             const container = document.getElementById('heatmapContainer');
             container.innerHTML = '';
             let headRow = `<div class="heatmap-row"><div class="heatmap-cell heatmap-head" style="position:sticky; left:0; z-index:20;">AGNT</div>`;
@@ -851,19 +915,21 @@
                 row+='</div>';
                 container.insertAdjacentHTML('beforeend', row);
             });
-
             const logDiv = document.getElementById('logContainer');
             logDiv.innerHTML = '';
-            actionLogs.forEach(log => {
-                logDiv.insertAdjacentHTML('beforeend', `<div class="log-entry"><span class="log-time">${log.t}</span> <span>${log.m}</span></div>`);
-            });
+            actionLogs.forEach(log => { logDiv.insertAdjacentHTML('beforeend', `<div class="log-entry"><span class="log-time">${log.t}</span> <span>${log.m}</span></div>`); });
         }
         function closeStats() { document.getElementById('statsModal').style.display = 'none'; }
 
-        function saveData() { localStorage.setItem('cv7_7_data', JSON.stringify({p:players, c:config, r:rivalIds, h:teamHistory, l:actionLogs})); }
+        function saveData() { localStorage.setItem('cv7_9_data', JSON.stringify({p:players, c:config, r:rivalIds, h:teamHistory, l:actionLogs})); }
         function loadData() {
-            const d = JSON.parse(localStorage.getItem('cv7_7_data'));
-            if(d) { players=d.p; config=d.c; rivalIds=d.r; teamHistory=d.h; actionLogs=d.l||[]; initDefaultPlayers(); } 
+            const d = JSON.parse(localStorage.getItem('cv7_9_data'));
+            if(d) { 
+                players=d.p; config=d.c; rivalIds=d.r; teamHistory=d.h; actionLogs=d.l||[]; 
+                if(!config.baseScore) config.baseScore = 10; 
+                if(!config.colorMode) config.colorMode = 'tactical';
+                initDefaultPlayers(); 
+            } 
             else { initDefaultPlayers(); }
         }
 
